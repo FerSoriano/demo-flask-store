@@ -1,13 +1,14 @@
 from os import environ
 from werkzeug.security import check_password_hash
-from peewee import IntegrityError
+from peewee import IntegrityError, DoesNotExist
 from database import User, Product
 from flask import (
     Flask,
     render_template,
     request, session,
     redirect,
-    url_for
+    url_for,
+    abort
 )
 
 app = Flask(__name__)
@@ -58,6 +59,33 @@ def create_products():
     return render_template('products/create.html')
 
 
+@app.route('/products/update/<id>', methods=['GET', 'POST'])
+def update_products(id: int):
+    error = None
+    try:
+        product = Product.get_by_id(id)
+    except DoesNotExist:
+        abort(404)
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        price = request.form.get('price')
+
+        if name and price:
+            Product.update(
+                name=name,
+                price=price
+            ).where(Product.id == id).execute()
+
+            return redirect(url_for('products'))
+        else:
+            error = 'Need to fill both fields'
+
+    return render_template('products/update.html',
+                           product=product,
+                           error=error)
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -76,7 +104,7 @@ def login():
     return render_template('login.html', error=error)
 
 
-@app.route('/logout', methods=['GET', 'POST'])
+@app.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
