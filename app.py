@@ -1,0 +1,82 @@
+from os import environ
+from werkzeug.security import check_password_hash
+from peewee import IntegrityError
+from database import User, Product
+from flask import (Flask, render_template,
+                   request, session, redirect,
+                   url_for)
+
+app = Flask(__name__)
+app.secret_key = environ.get('SECRET_KEY')
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if username and password:
+            try:
+                user = User.create_user(username, password)
+                session['user_id'] = user.id
+                return redirect(url_for('products'))
+            except IntegrityError:
+                error = 'Username already exists. Try again.'
+
+    return render_template('register.html', error=error)
+
+
+@app.route('/products')
+def products():
+    user = User.get(session['user_id'])
+    _products = user.products
+    return render_template('products/index.html', products=_products)
+
+
+@app.route('/products/create', methods=['GET', 'POST'])
+def create_products():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        price = request.form.get('price')
+
+        if name and price:
+            user = User.get(session['user_id'])
+            Product.create(name=name, price=price, user=user)
+            return redirect(url_for('products'))
+
+    return render_template('products/create.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = User.select().where(User.username == username).first()
+
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            return redirect(url_for('products'))
+        else:
+            error = "Invalid Credentials. Try Again."
+
+    return render_template('login.html', error=error)
+
+
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('index'))
+
+
+if __name__ == '__name__':
+    app.run(debug=True, load_dotenv=True)
