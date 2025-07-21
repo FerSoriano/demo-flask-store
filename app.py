@@ -8,7 +8,8 @@ from flask import (
     request, session,
     redirect,
     url_for,
-    abort
+    abort,
+    flash
 )
 
 app = Flask(__name__)
@@ -63,7 +64,7 @@ def create_products():
 def update_products(id: int):
     error = None
     try:
-        product = Product.get_by_id(id)
+        _product = Product.get_by_id(id)
     except DoesNotExist:
         abort(404)
 
@@ -76,14 +77,30 @@ def update_products(id: int):
                 name=name,
                 price=price
             ).where(Product.id == id).execute()
-
+            flash(f'{_product.name} was updated!')
             return redirect(url_for('products'))
         else:
             error = 'Need to fill both fields'
 
     return render_template('products/update.html',
-                           product=product,
+                           product=_product,
                            error=error)
+
+
+@app.route('/products/delete/<id>', methods=['GET', 'POST'])
+def delete_product(id: int):
+    try:
+        _product = Product.get_by_id(id)
+    except DoesNotExist:
+        abort(404)
+
+    if request.method == 'POST':
+        _product.delete_instance()
+        flash(f'{_product.name} was deleted!')
+        return redirect(url_for('products'))
+
+    return render_template('products/delete.html',
+                           product=_product)
 
 
 @app.route('/login', methods=['GET', 'POST'])
