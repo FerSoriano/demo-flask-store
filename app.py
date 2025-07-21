@@ -2,9 +2,13 @@ from os import environ
 from werkzeug.security import check_password_hash
 from peewee import IntegrityError
 from database import User, Product
-from flask import (Flask, render_template,
-                   request, session, redirect,
-                   url_for)
+from flask import (
+    Flask,
+    render_template,
+    request, session,
+    redirect,
+    url_for
+)
 
 app = Flask(__name__)
 app.secret_key = environ.get('SECRET_KEY')

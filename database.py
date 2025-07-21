@@ -1,10 +1,15 @@
 from os import environ
-from peewee import (MySQLDatabase, Model, CharField,
-                    DateTimeField, TextField, IntegerField,
-                    ForeignKeyField)
 from datetime import datetime
 from werkzeug.security import generate_password_hash
-
+from peewee import (
+    MySQLDatabase,
+    Model,
+    CharField,
+    DateTimeField,
+    TextField,
+    IntegerField,
+    ForeignKeyField
+)
 
 DB_CONFIG = {
     'database': environ.get('DB_NAME',),
